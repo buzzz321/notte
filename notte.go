@@ -1,24 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
-	"os"
+	"fmt"
 	"log"
+	"os"
 
-	"github.com/bwmarrin/discordgo"
+	"gw2util"
 	"strings"
 	"time"
-	"gw2util"
-)
 
+	"github.com/bwmarrin/discordgo"
+)
 
 // Variables used for command line parameters
 var (
-	BotID string
+	BotID    string
+	userData gw2util.UserDataSlice
 )
 
-func readkey(filename string) (string) {
+func readkey(filename string) string {
 	inputFile, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -35,40 +36,97 @@ func readkey(filename string) (string) {
 }
 
 func whatIs(username string, line string) (bool, string) {
-	if (strings.Contains(strings.ToLower(line), "vad är") ||
-		strings.Contains(strings.ToLower(line), "show my")) {
+	if strings.Contains(strings.ToLower(line), "vad är") ||
+		strings.Contains(strings.ToLower(line), "show my") {
 		tokens := strings.Split(line, " ")
-		datum := time.Now()
-		switch tokens[2]{
+		switch tokens[2] {
 		case "klockan":
+			datum := time.Now()
 			fmt.Println(datum.Format("02 Jan 06 15:04 MST"))
 			return true, datum.Format("02 Jan 06 15:04 MST")
 		case "crafts":
-			crafts := showCrafting(username)
-
-			return true, crafts[:]
+			if len(tokens) == 3 {
+				crafts := showCrafting("", username)
+				return true, crafts[:]
+			}
+			if len(tokens) >= 3 {
+				var crafts string
+				var craftsArr []string
+				if strings.TrimSpace(tokens[3]) == "all" {
+					chars := strings.Split(showChars(username), "\n")
+					for _, char := range chars[:len(chars)-1] {
+						craftsArr = append(craftsArr, "**"+char+"**")
+						craftsArr = append(craftsArr, showCrafting(char, username))
+					}
+					crafts = strings.Join(craftsArr, "\n")
+				} else {
+					crafts = showCrafting(strings.Join(tokens[3:], " "), username)
+				}
+				return true, crafts[:]
+			}
+		case "chars":
+			return true, showChars(username)
 		}
 	}
 
 	return false, ""
 }
+
+func setMy(username string, line string) (bool, string) {
+	if strings.Contains(strings.ToLower(line), "spara min") ||
+		strings.Contains(strings.ToLower(line), "set my") {
+		tokens := strings.Split(line, " ")
+		fmt.Println(tokens)
+		if len(tokens) < 3 {
+			return false, ""
+		}
+
+		switch tokens[2] {
+		case "apikey":
+			gameId := strings.Join(tokens[3:len(tokens)-1], " ")
+			gw2util.UpsertUserData(userData, gw2util.UserData{username, gameId, tokens[len(tokens)-1]})
+			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameId, tokens[len(tokens)-1])
+		}
+	}
+	return false, ""
+}
+
 /*
 
 	gw2 := gw2util.Gw2Api{"https://api.guildwars2.com/v2/", gw2util.GetKey("../../../gw2/test.key")}
 	body := gw2util.QueryAnetAuth(gw2, "characters")
 
- */
-func showCrafting(name string) string {
-	var retVal[] string
+*/
+func showCrafting(charName string, chatName string) string {
+	var retVal []string
+	userData := gw2util.GetUserData(userData, chatName)
 
-	gw2 := gw2util.Gw2Api{"https://api.guildwars2.com/v2/", gw2util.GetKey("../../../gw2/test.key")}
-	crafts := gw2util.GetCrafting(gw2, name)
-	for _, craft:= range crafts{
+	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: userData.Key}
+	if charName == "" {
+		charName = userData.GameId
+	}
+	crafts := gw2util.GetCrafting(gw2, charName)
+	for _, craft := range crafts {
 		tmp := craft.String()
 		retVal = append(retVal, tmp)
 	}
 
-	return strings.Join(retVal,"")
+	return strings.Join(retVal, "")
+}
+
+func showChars(chatName string) string {
+	var retVal []string
+
+	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
+	chars := gw2util.GetCharacterNames(gw2)
+	for _, char := range chars {
+		if char != "" {
+			retVal = append(retVal, char)
+			retVal = append(retVal, "\n")
+		}
+	}
+
+	return strings.Join(retVal, "")
 }
 
 // This function will be called (due to AddHandler below) every time a new
@@ -91,15 +149,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	whatis, answer := whatIs(m.Author.Username, strings.TrimSpace(m.Content))
-	if (whatis) {
+	if whatis {
 		_, _ = s.ChannelMessageSend(m.ChannelID, answer)
 	}
+
+	setmy, answer := setMy(m.Author.Username, strings.TrimSpace(m.Content))
+	if setmy {
+		_, _ = s.ChannelMessageSend(m.ChannelID, answer)
+	}
+
 }
 
 func main() {
 	discordKey := readkey("../../../discord/disc.key")
-	//fmt.Printf("Hello, 世界 key=[%s]\n", key)
-
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + discordKey)
 	if err != nil {
@@ -107,34 +169,12 @@ func main() {
 		return
 	}
 
+	userData = gw2util.ReadUserData("data.dat")
 	// Get the account information.
 	u, err := dg.User("@me")
 	if err != nil {
 		fmt.Println("error obtaining account details,", err)
 	}
-
-	/*	channels, err := dg.UserChannels()
-
-		if err != nil {
-			fmt.Println("error obtaining user channels details,", err)
-		} else {
-			for i := 0; i < len(channels); i++ {
-				fmt.Println("channel: ", channels[i].Name)
-			}
-		}
-
-		guilds, err := dg.UserGuilds()
-		if err != nil {
-			fmt.Println("error obtaining user guilds details,", err)
-		} else {
-			for i := 0; i < len(guilds); i++ {
-				fmt.Println("Guild name:", guilds[i].Name)
-				fmt.Println("channals: ", len(guilds[0].Channels))
-				for _, channel := range guilds[i].Channels {
-					fmt.Println("channel: ", channel.Name)
-				}
-			}
-		}*/
 	// Store the account ID for later use.
 	BotID = u.ID
 
