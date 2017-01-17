@@ -65,7 +65,16 @@ func whatIsChars(username string, _ string) (bool, string) {
 }
 
 func searchInBags(username string, itemName string) (bool, string) {
-	return true, findItem(username, itemName)
+	var items []string
+	chars := strings.Split(showChars(username), "\n")
+	for _, char := range chars[:len(chars)-1] {
+		items = append(items, "**"+char+"**")
+		itemsFound := findItem(username, itemName)
+		items = append(items, itemsFound)
+	}
+
+	fmt.Println(strings.Join(items, "\n"))
+	return true, strings.Join(items, "\n")
 }
 
 func removeCmd(cmd Cmds, cmdline string) string {

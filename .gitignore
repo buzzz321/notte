@@ -1,0 +1,9 @@
+*.exe
+.idea/libraries/GOPATH__notte_.xml
+*.xml
+.vscode/extensions.json
+*.go~
+notte
+*.iml
+data.dat
+Build notte
