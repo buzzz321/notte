@@ -14,6 +14,7 @@ import (
 
 // Variables used for command line parameters
 var (
+	BotID string
 	userData gw2util.UserDataSlice
 	commands []Cmds
 )
@@ -40,7 +41,9 @@ func chunkString(message string, chunkSize int) []string {
 	remainder := len(message) % chunkSize
 
 	for i := 0; i < chunks; i++ {
+		retVal = append(retVal, message[i * chunkSize:chunkSize + i * chunkSize])
 	}
+	retVal = append(retVal, message[chunks * chunkSize:remainder + chunks * chunkSize])
 	return retVal
 }
 
@@ -55,6 +58,9 @@ func setMy(username string, line string) (bool, string) {
 
 		switch tokens[2] {
 		case "apikey":
+			gameId := strings.Join(tokens[3:len(tokens) - 1], " ")
+			gw2util.UpsertUserData(userData, gw2util.UserData{username, gameId, tokens[len(tokens) - 1]})
+			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameId, tokens[len(tokens) - 1])
 			gw2util.SaveUserData(userData)
 		}
 	}
