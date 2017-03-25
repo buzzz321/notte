@@ -14,7 +14,7 @@ import (
 
 // Variables used for command line parameters
 var (
-	BotID string
+	BotID    string
 	userData gw2util.UserDataSlice
 	commands []Cmds
 )
@@ -41,9 +41,9 @@ func chunkString(message string, chunkSize int) []string {
 	remainder := len(message) % chunkSize
 
 	for i := 0; i < chunks; i++ {
-		retVal = append(retVal, message[i * chunkSize:chunkSize + i * chunkSize])
+		retVal = append(retVal, message[i*chunkSize:chunkSize+i*chunkSize])
 	}
-	retVal = append(retVal, message[chunks * chunkSize:remainder + chunks * chunkSize])
+	retVal = append(retVal, message[chunks*chunkSize:remainder+chunks*chunkSize])
 	return retVal
 }
 
@@ -58,9 +58,9 @@ func setMy(username string, line string) (bool, string) {
 
 		switch tokens[2] {
 		case "apikey":
-			gameId := strings.Join(tokens[3:len(tokens) - 1], " ")
-			gw2util.UpsertUserData(userData, gw2util.UserData{username, gameId, tokens[len(tokens) - 1]})
-			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameId, tokens[len(tokens) - 1])
+			gameId := strings.Join(tokens[3:len(tokens)-1], " ")
+			gw2util.UpsertUserData(userData, gw2util.UserData{username, gameId, tokens[len(tokens)-1]})
+			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameId, tokens[len(tokens)-1])
 			gw2util.SaveUserData(userData)
 		}
 	}
@@ -121,6 +121,33 @@ func showChars(chatName string) string {
 	return strings.Join(retVal, "")
 }
 
+func getWvWvWKD(chatName string) string {
+	var kdRed,kdGreen,kDBlue float64 = 0.0, 0.0,0.0
+
+	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
+	stats := gw2util.GetWWWStats(gw2 , "2007")
+
+	if stats.Kills.Blue > 0 {
+		kDBlue = stats.Kills.Blue / stats.Deaths.Blue
+	}
+	if stats.Kills.Red > 0 {
+		kdRed = stats.Kills.Red / stats.Deaths.Red
+	}
+	if stats.Kills.Green > 0 {
+		kdGreen = stats.Kills.Green / stats.Deaths.Green
+	}
+
+	return fmt.Sprintf("K/D \n Blue: %6.2f\n Red: %6.2f\n Green: %6.2f\n", kDBlue, kdRed, kdGreen)
+}
+
+func showWvWvWstats(chatName string) string {
+	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
+	stats := gw2util.GetWWWStats(gw2 , "2007")
+
+	return stats.String()
+}
+
+
 /*
 func chunkMessage(message string, chunksize uint64) []string {
 	var retVal []string
@@ -147,6 +174,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	//    whatis, answer := whatIs(m.Author.Username, strings.TrimSpace(m.Content))
 	whatis, answer := Process(m.Author.Username, strings.TrimSpace(m.Content))
+
 	if whatis {
 		if len(answer) < 2000 {
 			_, _ = s.ChannelMessageSend(m.ChannelID, answer)

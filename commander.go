@@ -64,6 +64,14 @@ func whatIsChars(username string, _ string) (bool, string) {
 	return true, showChars(username)
 }
 
+func whatIsKD(username string, _ string) (bool, string) {
+	return true, getWvWvWKD(username)
+}
+
+func whatIsWvWvW(username string, _ string) (bool, string) {
+	return true, showWvWvWstats(username)
+}
+
 func searchInBags(username string, itemName string) (bool, string) {
 	var items []string
 	chars := strings.Split(showChars(username), "\n")
@@ -124,6 +132,18 @@ func initCommands() []Cmds {
 			cmd:      "bags",
 			help:     "<search in bags> Search thru all bags for an item",
 			Call:     searchInBags,
+		},
+		Cmds {
+			selector: "what is",
+			cmd:      "kd",
+			help:     "<what is kd> Whats is the current kill death ratio",
+			Call:     whatIsKD,
+		},
+		Cmds {
+			selector: "show my",
+			cmd:      "wwwstats",
+			help:     "<what is kd> Shows the current kills and deaths in wvwvw",
+			Call:     whatIsWvWvW,
 		},
 	}
 
