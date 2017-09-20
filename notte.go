@@ -58,9 +58,9 @@ func setMy(username string, line string) (bool, string) {
 
 		switch tokens[2] {
 		case "apikey":
-			gameId := strings.Join(tokens[3:len(tokens)-1], " ")
-			gw2util.UpsertUserData(userData, gw2util.UserData{username, gameId, tokens[len(tokens)-1]})
-			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameId, tokens[len(tokens)-1])
+			gameID := strings.Join(tokens[3:len(tokens)-1], " ")
+			userData = gw2util.UpsertUserData(userData, gw2util.UserData{ChatName: username, GameId: gameID, Key: tokens[len(tokens)-1]})
+			fmt.Printf("username = %s GameId = %s Key = %s\n", username, gameID, tokens[len(tokens)-1])
 			gw2util.SaveUserData(userData)
 		}
 	}
@@ -108,7 +108,9 @@ func showCrafting(charName string, chatName string) string {
 func showChars(chatName string) string {
 	var retVal []string
 
+	fmt.Println(chatName)
 	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
+	fmt.Println(gw2)
 	chars := gw2util.GetCharacterNames(gw2)
 	fmt.Println(chars)
 	for _, char := range chars {
@@ -122,10 +124,10 @@ func showChars(chatName string) string {
 }
 
 func getWvWvWKD(chatName string) string {
-	var kdRed,kdGreen,kDBlue float64 = 0.0, 0.0,0.0
+	var kdRed, kdGreen, kDBlue float64 = 0.0, 0.0, 0.0
 
 	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
-	stats := gw2util.GetWWWStats(gw2 , "2007")
+	stats := gw2util.GetWWWStats(gw2, "2007")
 
 	if stats.Kills.Blue > 0 {
 		kDBlue = stats.Kills.Blue / stats.Deaths.Blue
@@ -142,11 +144,10 @@ func getWvWvWKD(chatName string) string {
 
 func showWvWvWstats(chatName string) string {
 	gw2 := gw2util.Gw2Api{BaseUrl: "https://api.guildwars2.com/v2/", Key: gw2util.GetUserData(userData, chatName).Key}
-	stats := gw2util.GetWWWStats(gw2 , "2007")
+	stats := gw2util.GetWWWStats(gw2, "2007")
 
 	return stats.String()
 }
-
 
 /*
 func chunkMessage(message string, chunksize uint64) []string {
