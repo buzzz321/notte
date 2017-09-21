@@ -90,6 +90,7 @@ func findItem(chatName string, itemName string) string {
 
 func showCrafting(charName string, chatName string) string {
     var retVal []string
+    
     userData := gw2util.GetUserData(userData, chatName)
 
     gw2 := gw2util.Gw2Api{BaseURL: "https://api.guildwars2.com/v2/", Key: userData.Key}
