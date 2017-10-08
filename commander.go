@@ -54,12 +54,6 @@ func whatIsCrafts(username string, line string) (bool, string) {
     return false, ""
 }
 
-/*
-func findMyItem(username string, cmdline string) (bool, string) {
-    items := gw2util.GetItems(gw2, GetItemIdsFromBags(jsonParsed, username))
-    return gw2util.FindItem(items, "food")
-}
-*/
 func whatIsChars(username string, _ string) (bool, string) {
     return true, showChars(username)
 }
@@ -77,7 +71,7 @@ func searchInBags(username string, itemName string) (bool, string) {
     chars := strings.Split(showChars(username), "\n")
     for _, char := range chars[:len(chars)-1] {
         items = append(items, "**"+char+"**")
-        itemsFound := findItem(username, itemName)
+        itemsFound := findItem(username, char, itemName)
         items = append(items, itemsFound)
     }
 

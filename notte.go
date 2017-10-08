@@ -74,13 +74,13 @@ func setMy(username string, line string) (bool, string) {
 
 */
 
-func findItem(chatName string, itemName string) string {
+func findItem(chatName string, charName string, itemName string) string {
     var retVal string
 
     userData := gw2util.GetUserData(userData, chatName)
     gw2 := gw2util.Gw2Api{BaseURL: "https://api.guildwars2.com/v2/", Key: userData.Key}
 
-    items := gw2util.FindItem(gw2, userData.GameID, itemName)
+    items := gw2util.FindItem(gw2, charName, itemName)
 
     for _, item := range items {
         retVal += item.String() + "\n"
